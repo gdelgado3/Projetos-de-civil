@@ -49,6 +49,13 @@ function exigirAdmin(req, res, next) {
   next();
 }
 const app_ = [exigirConta, exigirGabinete]; // atalho para rotas da aplicação
+// Administradores da plataforma (quem gere a demo): emails na variável SUPERADMIN_EMAILS, separados por vírgulas
+const SUPERADMINS = (process.env.SUPERADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const ePlataformaAdmin = u => SUPERADMINS.includes(String(u?.email || '').toLowerCase());
+function exigirPlataforma(req, res, next) {
+  if (!ePlataformaAdmin(req.u)) return res.status(403).json({ erro: 'Só a administração da plataforma pode fazer isto.' });
+  next();
+}
 
 // ===== Leitura de dados =====
 const gabinete = gid => { const g = um('SELECT * FROM gabinetes WHERE id = ?', gid); return { ...g, campos: JSON.parse(g.campos) }; };
@@ -153,7 +160,7 @@ app.get('/api/eu', (req, res) => {
     WHERE c.email = ? AND c.aceite_em IS NULL AND c.gabinete_id NOT IN (SELECT gabinete_id FROM membros WHERE utilizador_id = ?)`, u.email, u.id);
   const estado = !m ? 'sem_gabinete' : !m.perfil_completo ? 'perfil_incompleto' : 'pronto';
   const ativo = m ? { id: m.gabinete_id, nome: gabinete(m.gabinete_id).nome, papel: m.papel, departamentos: departamentos(m.gabinete_id), funcao: m.funcao, departamentoId: m.departamento_id, telefone: m.telefone } : null;
-  res.json({ utilizador: u, estado, gabinetes, gabineteAtivo: ativo, convitesPendentes });
+  res.json({ utilizador: u, estado, gabinetes, gabineteAtivo: ativo, convitesPendentes, plataformaAdmin: ePlataformaAdmin(u) });
 });
 app.post('/api/gabinete-ativo', exigirConta, (req, res) => {
   const m = um('SELECT 1 FROM membros WHERE gabinete_id = ? AND utilizador_id = ?', req.body.gabineteId || '', req.u.id);
@@ -301,6 +308,76 @@ app.delete('/api/membros/:id', ...app_, exigirAdmin, (req, res) => {
   correr('UPDATE sessoes SET gabinete_id = NULL WHERE utilizador_id = ? AND gabinete_id = ?', req.params.id, req.gid);
   publicar(req.gid, null, `${alvo.nome} saiu do gabinete.`);
   res.json({ ok: true });
+});
+
+// ===== Apagar contas e gabinetes =====
+// Apaga uma conta. Gabinetes onde era a única pessoa também são apagados;
+// se era o único administrador, o membro mais antigo passa a administrador.
+function apagarUtilizador(uid) {
+  const u = um('SELECT nome FROM utilizadores WHERE id = ?', uid);
+  if (!u) throw new Erro('Conta não encontrada.', 404);
+  const avisar = [];
+  transacao(() => {
+    for (const m of todos('SELECT gabinete_id, papel FROM membros WHERE utilizador_id = ?', uid)) {
+      const outros = todos('SELECT utilizador_id, papel FROM membros WHERE gabinete_id = ? AND utilizador_id != ? ORDER BY entrou_em', m.gabinete_id, uid);
+      if (!outros.length) { correr('DELETE FROM gabinetes WHERE id = ?', m.gabinete_id); continue; }
+      if (m.papel === 'admin' && !outros.some(o => o.papel === 'admin'))
+        correr("UPDATE membros SET papel = 'admin' WHERE gabinete_id = ? AND utilizador_id = ?", m.gabinete_id, outros[0].utilizador_id);
+      avisar.push(m.gabinete_id);
+    }
+    correr('DELETE FROM utilizadores WHERE id = ?', uid);
+  });
+  avisar.forEach(gid => publicar(gid, null, `${u.nome} apagou a conta e saiu do gabinete.`));
+}
+app.delete('/api/conta', exigirConta, (req, res) => {
+  const u = um('SELECT senha FROM utilizadores WHERE id = ?', req.u.id);
+  if (!verificarSenha(String(req.body?.senha || ''), u.senha)) throw new Erro('A palavra-passe não está certa.');
+  apagarUtilizador(req.u.id);
+  terminarSessao(req, res);
+  res.json({ ok: true });
+});
+app.delete('/api/gabinete', ...app_, exigirAdmin, (req, res) => {
+  const g = gabinete(req.gid);
+  if (texto(req.body?.nome) !== g.nome) throw new Erro('Escreve o nome do gabinete exatamente como aparece para confirmar.');
+  correr('DELETE FROM gabinetes WHERE id = ?', req.gid);
+  res.json({ ok: true });
+});
+
+// ===== Administração da plataforma =====
+app.get('/api/plataforma', exigirConta, exigirPlataforma, (req, res) => {
+  const utilizadores = todos(`SELECT u.id, u.nome, u.email, u.criado_em,
+      (SELECT group_concat(g.nome, ', ') FROM membros m JOIN gabinetes g ON g.id = m.gabinete_id WHERE m.utilizador_id = u.id) AS gabinetes
+    FROM utilizadores u ORDER BY u.criado_em DESC`)
+    .map(u => ({ id: u.id, nome: u.nome, email: u.email, criadoEm: u.criado_em, gabinetes: u.gabinetes || '', plataformaAdmin: ePlataformaAdmin(u), eu: u.id === req.u.id }));
+  const gabinetes = todos(`SELECT g.id, g.nome, g.criado_em,
+      (SELECT COUNT(*) FROM membros WHERE gabinete_id = g.id) AS membros,
+      (SELECT COUNT(*) FROM projetos WHERE gabinete_id = g.id) AS projetos,
+      (SELECT COUNT(*) FROM obras WHERE gabinete_id = g.id) AS obras
+    FROM gabinetes g ORDER BY g.criado_em DESC`)
+    .map(g => ({ id: g.id, nome: g.nome, criadoEm: g.criado_em, membros: g.membros, projetos: g.projetos, obras: g.obras }));
+  res.json({ utilizadores, gabinetes });
+});
+app.delete('/api/plataforma/utilizadores/:id', exigirConta, exigirPlataforma, (req, res) => {
+  if (req.params.id === req.u.id) throw new Erro('Para apagares a tua própria conta usa o teu perfil.');
+  apagarUtilizador(req.params.id);
+  res.json({ ok: true });
+});
+app.delete('/api/plataforma/gabinetes/:id', exigirConta, exigirPlataforma, (req, res) => {
+  if (!um('SELECT 1 FROM gabinetes WHERE id = ?', req.params.id)) throw new Erro('Gabinete não encontrado.', 404);
+  correr('DELETE FROM gabinetes WHERE id = ?', req.params.id);
+  res.json({ ok: true });
+});
+// Depois da demo: apaga todas as contas e gabinetes, exceto os da administração da plataforma
+app.post('/api/plataforma/limpar', exigirConta, exigirPlataforma, (req, res) => {
+  if (req.body?.confirmacao !== 'APAGAR') throw new Erro('Escreve APAGAR para confirmar.');
+  const manter = todos('SELECT id, email FROM utilizadores').filter(ePlataformaAdmin).map(u => u.id);
+  const marcas = manter.map(() => '?').join(',') || "''";
+  const r = transacao(() => {
+    const g = correr(`DELETE FROM gabinetes WHERE id NOT IN (SELECT gabinete_id FROM membros WHERE utilizador_id IN (${marcas}))`, ...manter).changes;
+    const u = correr(`DELETE FROM utilizadores WHERE id NOT IN (${marcas})`, ...manter).changes;
+    return { gabinetes: g, utilizadores: u };
+  });
+  res.json(r);
 });
 
 // ===== Arquivo de projetos anteriores =====

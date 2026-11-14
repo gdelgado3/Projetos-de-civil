@@ -21,6 +21,7 @@ Variáveis opcionais:
 | `PORT` | Porta do servidor | `3000` |
 | `DB_FICHEIRO` | Caminho da base de dados | `dados/documentos-civil.db` |
 | `NODE_ENV=production` | Cookie de sessão só por HTTPS | — |
+| `SUPERADMIN_EMAILS` | Emails da administração da plataforma (separados por vírgulas): veem o separador «Administração», onde se apagam contas e gabinetes e se limpa a demo | — |
 
 ## Fluxo
 
@@ -33,7 +34,8 @@ Variáveis opcionais:
 4. **Arquivo:** projetos anteriores com ficha e documentos (colar texto ou carregar .docx).
 5. **Obras:** ficha única por obra, geração dos três documentos.
 6. **Rever e exportar:** aceitar, editar, rejeitar ou trocar a fonte secção a secção; ver a origem de cada parágrafo; exportar Word.
-7. **Chat da equipa:** mensagens em tempo real, partilha de obras, documentos e projetos do arquivo. As gerações, as revisões terminadas e as entradas na equipa aparecem automaticamente.
+7. **Apagar:** cada pessoa pode apagar a própria conta; o administrador do gabinete pode apagar o gabinete.
+8. **Chat da equipa:** mensagens em tempo real, partilha de obras, documentos e projetos do arquivo. As gerações, as revisões terminadas e as entradas na equipa aparecem automaticamente.
 
 ## Como é gerado o rascunho (sem IA)
 

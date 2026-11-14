@@ -10,7 +10,7 @@ const porta = 3900 + Math.floor(Math.random() * 90);
 const base = `http://localhost:${porta}`;
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-'));
 const servidor = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'src/server.js'], {
-  env: { ...process.env, PORT: String(porta), DB_FICHEIRO: path.join(pasta, 'teste.db') }, stdio: ['ignore', 'pipe', 'inherit']
+  env: { ...process.env, PORT: String(porta), DB_FICHEIRO: path.join(pasta, 'teste.db'), SUPERADMIN_EMAILS: 'ana@teste.pt' }, stdio: ['ignore', 'pipe', 'inherit']
 });
 await new Promise(r => servidor.stdout.on('data', d => { if (String(d).includes('a correr')) r(); }));
 
@@ -84,6 +84,16 @@ try {
   const e2 = await eva('GET', '/api/eu'); await eva('PUT', '/api/perfil', { nome: 'Eva', funcao: 'x', departamentoId: e2.gabineteAtivo.departamentos[0].id });
   await assert.rejects(eva('GET', `/api/obras/${oid}`), e => e.status === 404);
   assert.equal((await eva('GET', '/api/chat')).some(m => m.texto.includes('Revi')), false); passo('gabinetes isolados');
+  // Administração da plataforma e apagar contas
+  await assert.rejects(rui('GET', '/api/plataforma'), e => e.status === 403);
+  const pl = await ana('GET', '/api/plataforma'); assert.equal(pl.gabinetes.length, 2); passo('painel de administração só para a Ana');
+  await assert.rejects(rui('DELETE', '/api/conta', { senha: 'errada' }), /palavra-passe/);
+  await rui('DELETE', '/api/conta', { senha: 'segredo123' });
+  assert.equal((await rui('GET', '/api/eu')).utilizador, null);
+  assert.ok((await ana('GET', '/api/chat')).some(m => m.texto.includes('apagou a conta'))); passo('o Rui apagou a própria conta');
+  const limpo = await ana('POST', '/api/plataforma/limpar', { confirmacao: 'APAGAR' });
+  assert.deepEqual(limpo, { gabinetes: 1, utilizadores: 1 });
+  assert.equal((await ana('GET', '/api/obras')).length, 1); passo('limpar a demo apagou a Eva e o gabinete dela, manteve a Ana');
   console.log('\nTudo certo.');
 } catch (e) { console.error('✗', e); process.exitCode = 1; }
 finally { servidor.kill(); }

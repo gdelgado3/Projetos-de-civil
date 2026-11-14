@@ -87,6 +87,24 @@ export async function vistaGabinete(el, ctx) {
       : '<p class="nota">Não há convites pendentes.</p>'}
   </section>` : ''}
 
+  <section class="cartao" style="border-color:var(--vermelho)">
+    <h2>Apagar</h2>
+    <form data-form="apagarConta">
+      <h3>A minha conta</h3>
+      <p class="nota">Apaga a tua conta. Se fores a única pessoa no gabinete, o gabinete também é apagado. Se fores o único administrador, o membro mais antigo passa a administrador.</p>
+      <div class="linha"><input name="senha" type="password" required placeholder="A tua palavra-passe" autocomplete="current-password" style="max-width:260px;margin:0">
+      <button type="submit" class="perigo">Apagar a minha conta</button></div>
+      <p class="erro-form"></p>
+    </form>
+    ${admin ? `<form data-form="apagarGabinete">
+      <h3>O gabinete</h3>
+      <p class="nota">Apaga o gabinete com o arquivo, as obras, os rascunhos e o chat, para toda a equipa. Escreve o nome do gabinete para confirmar.</p>
+      <div class="linha"><input name="nome" required placeholder="${esc(g.nome)}" autocomplete="off" style="max-width:320px;margin:0">
+      <button type="submit" class="perigo">Apagar o gabinete</button></div>
+      <p class="erro-form"></p>
+    </form>` : ''}
+  </section>
+
   <section class="cartao">
     <h2>Campos da ficha da obra</h2>
     <p class="nota">São os dados inseridos uma só vez por obra. Servem para trocar os dados das obras antigas pelos da obra nova.</p>
@@ -101,6 +119,8 @@ export async function vistaGabinete(el, ctx) {
     novoDep: async f => { await api('POST', '/api/departamentos', f); recarregar(); },
     perfil: async f => { await api('PUT', '/api/perfil', f); mostrar('Perfil guardado.'); delete document.getElementById('app').dataset.shell; ctx.recarregar(); },
     convite: async f => { const r = await api('POST', '/api/convites', f); await copiar(linkConvite(r.token)); mostrar('Convite criado. O link foi copiado.'); recarregar(); },
+    apagarConta: async f => { await api('DELETE', '/api/conta', f); mostrar('Conta apagada.'); location.hash = '#/'; ctx.recarregar(); },
+    apagarGabinete: async f => { await api('DELETE', '/api/gabinete', f); mostrar('Gabinete apagado.'); location.hash = '#/'; ctx.recarregar(); },
     campo: async f => { await api('PUT', '/api/gabinete', { campos: [...g.campos, f.campo] }); recarregar(); }
   });
   ligar(el, {

@@ -6,6 +6,7 @@ import { vistaArquivo } from './arquivo.js';
 import { vistaObras, vistaObra } from './obras.js';
 import { vistaRever } from './rever.js';
 import { vistaChat, receberMensagem } from './chat.js';
+import { vistaPlataforma } from './plataforma.js';
 
 let fonte = null;      // EventSource do chat
 let naoLidas = 0;
@@ -65,7 +66,8 @@ export async function montarApp(raiz, eu, rota, recarregar) {
     naoLidas = 0; abrirStream();
   }
   if (rota[0] === 'chat') naoLidas = 0;
-  document.getElementById('nav').innerHTML = SEPARADORES.map(([id, nome]) =>
+  const separadores = eu.plataformaAdmin ? [...SEPARADORES, ['plataforma', 'Administração']] : SEPARADORES;
+  document.getElementById('nav').innerHTML = separadores.map(([id, nome]) =>
     `<a href="#/app/${id}" class="${rota[0] === id ? 'ativo' : ''}">${nome}${id === 'chat' ? '<span class="badge" id="badge-chat" style="display:none"></span>' : ''}</a>`).join('');
   atualizarBadge();
 
@@ -77,6 +79,7 @@ export async function montarApp(raiz, eu, rota, recarregar) {
     else if (rota[0] === 'obras' && rota[1] && rota[2] === 'rever') await vistaRever(el, ctx, rota[1], rota[3] || 'memoria');
     else if (rota[0] === 'obras' && rota[1]) await vistaObra(el, ctx, rota[1]);
     else if (rota[0] === 'chat') await vistaChat(el, ctx);
+    else if (rota[0] === 'plataforma' && eu.plataformaAdmin) await vistaPlataforma(el, ctx);
     else await vistaObras(el, ctx);
   } catch (e) {
     el.innerHTML = `<section class="cartao"><p>${esc(e.message)}</p><a class="botao" href="#/app/obras">Voltar às obras</a></section>`;
