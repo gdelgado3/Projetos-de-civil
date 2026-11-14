@@ -1,0 +1,12 @@
+# Blueprint do Render: serviço web com disco para a base de dados
+# (o disco persistente exige o plano Starter; no plano Free os dados apagam-se a cada reinício)
+services:
+  - type: web
+    name: documentos-civil
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/saude
+    disk:
+      name: dados
+      mountPath: /data
+      sizeGB: 1

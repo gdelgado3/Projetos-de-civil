@@ -1,0 +1,16 @@
+{
+  "name": "documentos-civil",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP do Documentos de Civil: rascunhos de documentos de engenharia civil a partir dos projetos anteriores do gabinete",
+  "type": "module",
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "dev": "node --disable-warning=ExperimentalWarning --watch src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning test/fumo.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
