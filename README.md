@@ -22,6 +22,7 @@ Variáveis opcionais:
 | `DB_FICHEIRO` | Caminho da base de dados | `dados/documentos-civil.db` |
 | `NODE_ENV=production` | Cookie de sessão só por HTTPS | — |
 | `DEMO_CODIGO` | Liga a entrada por código: `/demo?codigo=…` cria uma conta temporária com um gabinete de exemplo só para cada visitante (para o QR do slide). Sem esta variável a rota está desligada; mudá-la invalida os QR antigos | — |
+| `DEMO_ABERTA` | `1` = quem abre a página inicial sem conta entra direto na demo, sem código (para um QR fixo que aponta para a página inicial). A equipa entra em `/#/entrar`. Desligar depois da demo | — |
 | `DEMO_MAX` / `DEMO_HORAS` | Máximo de contas de demo ao mesmo tempo / horas até serem apagadas automaticamente | `80` / `12` |
 | `SUPERADMIN_EMAILS` | Emails da administração da plataforma (separados por vírgulas): veem o separador «Administração», onde se apagam contas e gabinetes e se limpa a demo | — |
 

@@ -33,9 +33,10 @@ const formRegistar = (email = '', bloqueado = false) => `
     <button type="submit">Criar conta</button>
   </form>`;
 
-export function vistaEntrar(raiz, seguinte) {
+export function vistaEntrar(raiz, seguinte, demoAberta = false) {
   raiz.innerHTML = pagina(`<h1>Entrar</h1><p class="nota">Entra na conta do teu gabinete.</p>${formEntrar()}
-      <p class="nota">Ainda não tens conta? <a href="#/registar">Criar conta</a></p>`);
+      <p class="nota">Ainda não tens conta? <a href="#/registar">Criar conta</a></p>
+      ${demoAberta ? '<p class="nota"><a class="botao sec" href="/demo">Experimentar sem criar conta</a></p>' : ''}`);
   ligarForms(raiz, { entrar: async d => { await api('POST', '/api/entrar', d); seguinte(); } });
 }
 

@@ -4,18 +4,23 @@ import { vistaEntrar, vistaRegistar, vistaConvite } from './vistas/conta.js';
 import { vistaOnboarding, vistaPerfil } from './vistas/onboarding.js';
 import { montarApp, desmontarApp } from './vistas/shell.js';
 
+let primeiraVez = true; // só a abertura da página conta como "ler o QR"; sair da conta não reentra na demo
 async function encaminhar() {
   const raiz = document.getElementById('app');
   const partes = (location.hash || '#/').replace(/^#\/?/, '').split('/');
+  const abertura = primeiraVez && !location.hash; primeiraVez = false;
   let eu = null;
   try { eu = await api('GET', '/api/eu'); } catch { eu = { utilizador: null }; }
+  // Demo aberta (QR do slide): quem chega à página inicial sem conta entra direto na demonstração.
+  // A equipa entra com a sua conta em /#/entrar.
+  if (!eu.utilizador && eu.demoAberta && abertura) { location.replace('/demo'); return; }
 
   // Convite: funciona com ou sem conta
   if (partes[0] === 'convite' && partes[1]) { desmontarApp(); return vistaConvite(raiz, partes[1], eu, encaminhar); }
 
   if (!eu.utilizador) {
     desmontarApp();
-    return partes[0] === 'registar' ? vistaRegistar(raiz, encaminhar) : vistaEntrar(raiz, encaminhar);
+    return partes[0] === 'registar' ? vistaRegistar(raiz, encaminhar) : vistaEntrar(raiz, encaminhar, eu.demoAberta);
   }
   // Primeira entrada: dados do gabinete e perfil antes de tudo o resto
   if (eu.estado === 'sem_gabinete') { desmontarApp(); return vistaOnboarding(raiz, eu, encaminhar); }

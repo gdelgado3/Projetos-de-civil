@@ -151,7 +151,7 @@ app.post('/api/sair', (req, res) => { terminarSessao(req, res); res.json({ ok: t
 app.get('/api/eu', (req, res) => {
   const s = sessaoDe(req);
   const u = s && um('SELECT id, nome, email FROM utilizadores WHERE id = ?', s.utilizador_id);
-  if (!u) return res.json({ utilizador: null });
+  if (!u) return res.json({ utilizador: null, demoAberta: DEMO_ABERTA });
   req.s = s; req.u = u;
   const m = membroAtivo(req);
   const gabinetes = todos('SELECT g.id, g.nome, m.papel, m.perfil_completo FROM membros m JOIN gabinetes g ON g.id = m.gabinete_id WHERE m.utilizador_id = ? ORDER BY m.entrou_em', u.id)
@@ -181,6 +181,9 @@ function inserirExemplo(gid, depId, nomeGabinete, uid) {
 // Cada visitante recebe uma conta temporária e o seu próprio gabinete de exemplo, já pronto a usar.
 // Só funciona se a variável DEMO_CODIGO estiver definida; trocá-la desliga os QR antigos.
 const DEMO_CODIGO = process.env.DEMO_CODIGO || '';
+// DEMO_ABERTA=1: qualquer visitante sem conta que abra a página inicial entra na demo, sem código
+// (para um QR que não se pode alterar e aponta para a página inicial). Desligar depois da demo.
+const DEMO_ABERTA = process.env.DEMO_ABERTA === '1';
 const DEMO_MAX = Number(process.env.DEMO_MAX) || 80;       // contas de demo ao mesmo tempo
 const DEMO_HORAS = Number(process.env.DEMO_HORAS) || 12;   // depois disto a conta de demo é apagada
 const eDemo = u => /@demo\.local$/.test(String(u?.email || ''));
@@ -196,13 +199,13 @@ function limparDemoAntiga() {
   for (const u of todos("SELECT id FROM utilizadores WHERE email LIKE '%@demo.local' AND criado_em < ?", limite)) { try { apagarUtilizador(u.id); } catch (e) { console.error(e); } }
 }
 app.get('/demo', (req, res) => {
-  if (!DEMO_CODIGO) return paginaDemo(res, 404, 'Experimentação indisponível', 'O acesso por código não está ativo neste momento.');
+  if (!DEMO_CODIGO && !DEMO_ABERTA) return paginaDemo(res, 404, 'Experimentação indisponível', 'O acesso por código não está ativo neste momento.');
   // Quem já está numa conta de demo volta ao que estava a fazer, sem criar outra
   const s = sessaoDe(req); const atual = s && um('SELECT email FROM utilizadores WHERE id = ?', s.utilizador_id);
   if (eDemo(atual)) return res.redirect('/#/app/obras');
   const ip = req.ip; const f = falhasDemo.get(ip);
   if (f && f.ate > Date.now() && f.n >= 15) return paginaDemo(res, 429, 'Demasiadas tentativas', 'Espera uns minutos e volta a ler o QR.');
-  if (!timingSafeEqual(hashCodigo(req.query.codigo || ''), hashCodigo(DEMO_CODIGO))) {
+  if (!DEMO_ABERTA && !timingSafeEqual(hashCodigo(req.query.codigo || ''), hashCodigo(DEMO_CODIGO))) {
     falhasDemo.set(ip, { n: (f && f.ate > Date.now() ? f.n : 0) + 1, ate: Date.now() + 10 * 60 * 1000 });
     return paginaDemo(res, 403, 'Código inválido', 'O código de experimentação não está certo. Confirma o QR do slide.');
   }
