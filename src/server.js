@@ -2,7 +2,7 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'node:crypto';
 import { um, todos, correr, agora, novoId, transacao } from './db.js';
 import { hashSenha, verificarSenha, criarSessao, sessaoDe, terminarSessao } from './auth.js';
 import * as motor from './motor.js';
@@ -169,6 +169,59 @@ app.post('/api/gabinete-ativo', exigirConta, (req, res) => {
   res.json({ ok: true });
 });
 
+// Põe no gabinete os projetos fictícios e a obra nova de exemplo (corre dentro de uma transação)
+function inserirExemplo(gid, depId, nomeGabinete, uid) {
+  const ex = dadosExemplo(nomeGabinete);
+  ex.projetos.forEach(p => correr('INSERT INTO projetos (id, gabinete_id, departamento_id, nome, ano, ficha, documentos, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    novoId(), gid, depId, p.nome, p.ano, JSON.stringify(p.ficha), JSON.stringify(p.documentos), agora()));
+  correr('INSERT INTO obras (id, gabinete_id, departamento_id, ficha, criado_por, criado_em) VALUES (?, ?, ?, ?, ?, ?)', novoId(), gid, depId, JSON.stringify(ex.obra.ficha), uid, agora());
+}
+
+// ===== Entrada por código de experimentação (QR do slide) =====
+// Cada visitante recebe uma conta temporária e o seu próprio gabinete de exemplo, já pronto a usar.
+// Só funciona se a variável DEMO_CODIGO estiver definida; trocá-la desliga os QR antigos.
+const DEMO_CODIGO = process.env.DEMO_CODIGO || '';
+const DEMO_MAX = Number(process.env.DEMO_MAX) || 80;       // contas de demo ao mesmo tempo
+const DEMO_HORAS = Number(process.env.DEMO_HORAS) || 12;   // depois disto a conta de demo é apagada
+const eDemo = u => /@demo\.local$/.test(String(u?.email || ''));
+const hashCodigo = s => createHash('sha256').update(String(s)).digest();
+const falhasDemo = new Map(); // ip -> { n, ate }
+function paginaDemo(res, status, titulo, msg) {
+  res.status(status).type('html').send(`<!doctype html><html lang="pt-PT"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title>
+<body style="font-family:Montserrat,Arial,sans-serif;background:#175FAA;color:#F6F6F6;display:grid;place-items:center;min-height:100vh;margin:0"><main style="max-width:420px;padding:24px;text-align:center">
+<h1 style="font-size:22px">${titulo}</h1><p>${msg}</p><p><a style="color:#fff" href="/">Ir para a página inicial</a></p></main></body></html>`);
+}
+function limparDemoAntiga() {
+  const limite = new Date(Date.now() - DEMO_HORAS * 3600 * 1000).toISOString();
+  for (const u of todos("SELECT id FROM utilizadores WHERE email LIKE '%@demo.local' AND criado_em < ?", limite)) { try { apagarUtilizador(u.id); } catch (e) { console.error(e); } }
+}
+app.get('/demo', (req, res) => {
+  if (!DEMO_CODIGO) return paginaDemo(res, 404, 'Experimentação indisponível', 'O acesso por código não está ativo neste momento.');
+  // Quem já está numa conta de demo volta ao que estava a fazer, sem criar outra
+  const s = sessaoDe(req); const atual = s && um('SELECT email FROM utilizadores WHERE id = ?', s.utilizador_id);
+  if (eDemo(atual)) return res.redirect('/#/app/obras');
+  const ip = req.ip; const f = falhasDemo.get(ip);
+  if (f && f.ate > Date.now() && f.n >= 15) return paginaDemo(res, 429, 'Demasiadas tentativas', 'Espera uns minutos e volta a ler o QR.');
+  if (!timingSafeEqual(hashCodigo(req.query.codigo || ''), hashCodigo(DEMO_CODIGO))) {
+    falhasDemo.set(ip, { n: (f && f.ate > Date.now() ? f.n : 0) + 1, ate: Date.now() + 10 * 60 * 1000 });
+    return paginaDemo(res, 403, 'Código inválido', 'O código de experimentação não está certo. Confirma o QR do slide.');
+  }
+  limparDemoAntiga();
+  const n = um("SELECT COUNT(*) AS n FROM utilizadores WHERE email LIKE '%@demo.local'").n;
+  if (n >= DEMO_MAX) return paginaDemo(res, 503, 'Demonstração cheia', 'Há muitas pessoas a experimentar ao mesmo tempo. Tenta daqui a pouco.');
+  const uid = novoId(), gid = novoId(), depId = novoId();
+  transacao(() => {
+    correr('INSERT INTO utilizadores (id, nome, email, senha, criado_em) VALUES (?, ?, ?, ?, ?)', uid, `Visitante ${n + 1}`, `demo-${randomBytes(6).toString('hex')}@demo.local`, hashSenha(randomBytes(24).toString('hex')), agora());
+    correr('INSERT INTO gabinetes (id, nome, nif, localidade, descricao, plano, campos, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      gid, 'Gabinete de demonstração', '', '', 'Gabinete fictício para experimentar o Documentos de Civil.', 'pequeno', JSON.stringify(motor.CAMPOS_BASE), agora());
+    correr('INSERT INTO departamentos (id, gabinete_id, nome, area, descricao) VALUES (?, ?, ?, ?, ?)', depId, gid, 'Hidráulica', 'Hidráulica', 'Abastecimento de água, drenagem e estruturas hidráulicas.');
+    correr('INSERT INTO membros (gabinete_id, utilizador_id, papel, funcao, departamento_id, perfil_completo, entrou_em) VALUES (?, ?, ?, ?, ?, 1, ?)', gid, uid, 'admin', 'Projetista', depId, agora());
+    inserirExemplo(gid, depId, 'Gabinete de demonstração', uid);
+  });
+  criarSessao(res, uid);
+  res.redirect('/#/app/obras');
+});
+
 // ===== Onboarding: criar gabinete e completar perfil =====
 app.post('/api/gabinetes', exigirConta, (req, res) => {
   const b = req.body;
@@ -187,14 +240,8 @@ app.post('/api/gabinetes', exigirConta, (req, res) => {
       return { id, area: d.area };
     });
     correr('INSERT INTO membros (gabinete_id, utilizador_id, papel, perfil_completo, entrou_em) VALUES (?, ?, ?, 0, ?)', gid, req.u.id, 'admin', agora());
-    if (b.exemplo) {
-      // Projetos fictícios no departamento de Hidráulica (ou no primeiro)
-      const depId = (ids.find(d => d.area === 'Hidráulica') || ids[0]).id;
-      const ex = dadosExemplo(nome);
-      ex.projetos.forEach(p => correr('INSERT INTO projetos (id, gabinete_id, departamento_id, nome, ano, ficha, documentos, atualizado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        novoId(), gid, depId, p.nome, p.ano, JSON.stringify(p.ficha), JSON.stringify(p.documentos), agora()));
-      correr('INSERT INTO obras (id, gabinete_id, departamento_id, ficha, criado_por, criado_em) VALUES (?, ?, ?, ?, ?, ?)', novoId(), gid, depId, JSON.stringify(ex.obra.ficha), req.u.id, agora());
-    }
+    // Projetos fictícios no departamento de Hidráulica (ou no primeiro)
+    if (b.exemplo) inserirExemplo(gid, (ids.find(d => d.area === 'Hidráulica') || ids[0]).id, nome, req.u.id);
   });
   correr('UPDATE sessoes SET gabinete_id = ? WHERE token = ?', gid, req.s.token);
   publicar(gid, null, `${req.u.nome} criou o gabinete «${nome}».`);

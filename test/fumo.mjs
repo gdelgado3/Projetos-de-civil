@@ -10,7 +10,7 @@ const porta = 3900 + Math.floor(Math.random() * 90);
 const base = `http://localhost:${porta}`;
 const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'dc-'));
 const servidor = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'src/server.js'], {
-  env: { ...process.env, PORT: String(porta), DB_FICHEIRO: path.join(pasta, 'teste.db'), SUPERADMIN_EMAILS: 'ana@teste.pt' }, stdio: ['ignore', 'pipe', 'inherit']
+  env: { ...process.env, PORT: String(porta), DB_FICHEIRO: path.join(pasta, 'teste.db'), SUPERADMIN_EMAILS: 'ana@teste.pt', DEMO_CODIGO: 'codigo-demo-teste' }, stdio: ['ignore', 'pipe', 'inherit']
 });
 await new Promise(r => servidor.stdout.on('data', d => { if (String(d).includes('a correr')) r(); }));
 
@@ -94,6 +94,25 @@ try {
   const limpo = await ana('POST', '/api/plataforma/limpar', { confirmacao: 'APAGAR' });
   assert.deepEqual(limpo, { gabinetes: 1, utilizadores: 1 });
   assert.equal((await ana('GET', '/api/obras')).length, 1); passo('limpar a demo apagou a Eva e o gabinete dela, manteve a Ana');
+  // Entrada por código (QR): cada visitante ganha um gabinete de exemplo só seu
+  const entrarDemo = async (codigo, cookie) => fetch(`${base}/demo?codigo=${codigo}`, { redirect: 'manual', headers: cookie ? { Cookie: cookie } : {} });
+  assert.equal((await entrarDemo('errado')).status, 403); passo('código de demo errado é recusado');
+  const d1 = await entrarDemo('codigo-demo-teste'); assert.equal(d1.status, 302); assert.equal(d1.headers.get('location'), '/#/app/obras');
+  const c1 = d1.headers.get('set-cookie').split(';')[0];
+  const v1 = async (m, u, b) => { const r = await fetch(base + u, { method: m, headers: { Cookie: c1, ...(b ? { 'Content-Type': 'application/json' } : {}) }, body: b ? JSON.stringify(b) : undefined }); return r.json(); };
+  assert.equal((await v1('GET', '/api/eu')).estado, 'pronto');
+  const obrasV1 = await v1('GET', '/api/obras'); assert.equal(obrasV1.length, 1);
+  const gV1 = await v1('POST', `/api/obras/${obrasV1[0].id}/gerar/proposta`); assert.ok(gV1.documentos.proposta.rascunho.seccoes.length > 0);
+  passo('código certo: entra já com perfil, obra e projetos de exemplo, e gera a proposta');
+  assert.equal((await entrarDemo('codigo-demo-teste', c1)).headers.get('set-cookie'), null);
+  assert.equal((await ana('GET', '/api/plataforma')).utilizadores.filter(u => u.email.endsWith('@demo.local')).length, 1); passo('voltar a ler o QR não cria outra conta');
+  const d2 = await entrarDemo('codigo-demo-teste'); const c2 = d2.headers.get('set-cookie').split(';')[0];
+  const eu2 = await (await fetch(base + '/api/eu', { headers: { Cookie: c2 } })).json();
+  const eu1 = await v1('GET', '/api/eu');
+  assert.notEqual(eu1.gabineteAtivo.id, eu2.gabineteAtivo.id);
+  assert.equal((await fetch(`${base}/api/obras/${obrasV1[0].id}`, { headers: { Cookie: c2 } })).status, 404); passo('dois visitantes ficam isolados um do outro');
+  const limpoDemo = await ana('POST', '/api/plataforma/limpar', { confirmacao: 'APAGAR' });
+  assert.deepEqual(limpoDemo, { gabinetes: 2, utilizadores: 2 }); passo('limpar a demo apaga as contas e gabinetes dos visitantes');
   console.log('\nTudo certo.');
 } catch (e) { console.error('✗', e); process.exitCode = 1; }
 finally { servidor.kill(); }
