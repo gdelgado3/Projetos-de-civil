@@ -1,15 +1,12 @@
-// Moldura da aplicação: menu à esquerda, área de trabalho à direita, ligação em tempo real ao chat
+// Moldura da aplicação: menu à esquerda, área de trabalho à direita, 
 import { api } from '../api.js';
 import { esc, ligar, mostrar, icone, carregar, animar } from '../util.js';
 import { vistaGabinete } from './gabinete.js';
 import { vistaArquivo } from './arquivo.js';
 import { vistaObras, vistaObra } from './obras.js';
 import { vistaRever } from './rever.js';
-import { vistaChat, receberMensagem } from './chat.js';
 import { vistaPlataforma } from './plataforma.js';
 
-let fonte = null;      // EventSource do chat
-let naoLidas = 0;
 let rotaAtual = [];
 let utilizadorId = null;
 let ultimaRota = '';
@@ -18,7 +15,6 @@ let ultimaRota = '';
 const SEPARADORES = [
   ['obras', 'Obras', 'Obras', 'obras'],
   ['arquivo', 'Arquivo de projetos', 'Arquivo', 'arquivo'],
-  ['chat', 'Chat da equipa', 'Chat', 'chat'],
   ['gabinete', 'Gabinete e equipa', 'Equipa', 'gabinete']
 ];
 const LOGO = `<svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="12" fill="#F5A20A"/><rect x="11" y="11" width="18" height="3.4" rx="1.7" fill="#0B1F3F"/><rect x="11" y="18.3" width="12" height="3.4" rx="1.7" fill="#0B1F3F"/><rect x="11" y="25.6" width="18" height="3.4" rx="1.7" fill="#0B1F3F" opacity=".45"/></svg>`;
@@ -27,24 +23,10 @@ const lerCompacta = () => { try { return localStorage.getItem('dc-compacta') ===
 const gravarCompacta = v => { try { localStorage.setItem('dc-compacta', v ? '1' : '0'); } catch { /* sem armazenamento: só não fica guardado */ } };
 
 export function desmontarApp() {
-  if (fonte) { fonte.close(); fonte = null; }
-  naoLidas = 0; ultimaRota = '';
+  ultimaRota = '';
   delete document.getElementById('app').dataset.shell;
 }
 
-function abrirStream() {
-  if (fonte) fonte.close();
-  fonte = new EventSource('/api/chat/stream');
-  fonte.addEventListener('mensagem', e => {
-    const msg = JSON.parse(e.data);
-    if (rotaAtual[0] === 'chat') receberMensagem(msg);
-    else if (msg.autor?.id !== utilizadorId) { naoLidas++; atualizarBadge(); }
-  });
-}
-function atualizarBadge() {
-  const b = document.getElementById('badge-chat');
-  if (b) { b.textContent = naoLidas; b.style.display = naoLidas ? 'inline-block' : 'none'; }
-}
 
 // O indicador do menu desliza até ao separador ativo
 function posicionarIndicador(animado = true) {
@@ -79,7 +61,7 @@ export async function montarApp(raiz, eu, rota, recarregar) {
           ? `<label style="color:inherit;margin:0">Gabinete<select data-mudar="gabinete">${eu.gabinetes.map(x => `<option value="${x.id}" ${x.id === g.id ? 'selected' : ''}>${esc(x.nome)}</option>`).join('')}</select></label>`
           : `Gabinete<b>${esc(g.nome)}</b>`}</div>
         <nav class="nav" id="nav" aria-label="Menu principal"><span class="nav-ind" id="nav-ind"></span>
-          ${separadores.map(([id, nome, curto, ico]) => `<a class="nav-item" data-id="${id}" href="#/app/${id}" title="${nome}">${icone(ico, 21)}<span class="rotulo">${nome}</span><span class="curto">${curto}</span>${id === 'chat' ? '<span class="badge" id="badge-chat" style="display:none"></span>' : ''}</a>`).join('')}
+          ${separadores.map(([id, nome, curto, ico]) => `<a class="nav-item" data-id="${id}" href="#/app/${id}" title="${nome}">${icone(ico, 21)}<span class="rotulo">${nome}</span><span class="curto">${curto}</span></a>`).join('')}
         </nav>
         <div class="eu"><div class="avatar" aria-hidden="true">${esc(iniciais(eu.utilizador.nome))}</div>
           <div class="eu-txt"><b>${esc(eu.utilizador.nome)}</b>${esc(g.funcao || '')}${g.papel === 'admin' ? ', administrador' : ''}</div>
@@ -100,14 +82,11 @@ export async function montarApp(raiz, eu, rota, recarregar) {
       await api('POST', '/api/gabinete-ativo', { gabineteId: e.target.value });
       location.hash = '#/app/obras'; recarregar();
     };
-    naoLidas = 0; abrirStream();
     window.onresize = () => posicionarIndicador(false);
   }
-  if (rota[0] === 'chat') naoLidas = 0;
   const primeiraVez = !document.getElementById('nav-ind').classList.contains('pronto');
   document.querySelectorAll('#nav .nav-item').forEach(a => a.classList.toggle('ativo', a.dataset.id === rota[0]));
   posicionarIndicador(!primeiraVez);
-  atualizarBadge();
 
   const el = document.getElementById('conteudo');
   const ctx = { eu, recarregar };
@@ -118,7 +97,6 @@ export async function montarApp(raiz, eu, rota, recarregar) {
     else if (rota[0] === 'arquivo') await vistaArquivo(el, ctx, rota[1]);
     else if (rota[0] === 'obras' && rota[1] && rota[2] === 'rever') await vistaRever(el, ctx, rota[1], rota[3] || 'memoria');
     else if (rota[0] === 'obras' && rota[1]) await vistaObra(el, ctx, rota[1]);
-    else if (rota[0] === 'chat') await vistaChat(el, ctx);
     else if (rota[0] === 'plataforma' && eu.plataformaAdmin) await vistaPlataforma(el, ctx);
     else await vistaObras(el, ctx);
   } catch (e) {

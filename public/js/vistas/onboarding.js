@@ -14,9 +14,38 @@ const rascunho = { passo: 1, gabinete: { nome: '', nif: '', localidade: '', desc
 // Os três passos da primeira entrada, como as colunas de uma legenda
 function passos(n) {
   const nomes = [['Gabinete', 'Nome, NIF, descrição'], ['Departamentos', 'Áreas e descrições'], ['O teu perfil', 'Função e departamento']];
-  return `<div class="passos">${nomes.map(([t, d], i) => `<div class="${i + 1 === n ? 'atual' : i + 1 < n ? 'feito' : ''}">Passo ${i + 1} de 3<b>${t}</b>${d}</div>`).join('')}</div>`;
+  return `<div class="passos" style="--n:${n}"><span class="trilho"><i></i></span>${nomes.map(([t, d], i) => `<div class="${i + 1 === n ? 'atual' : i + 1 < n ? 'feito' : ''}"><b>${t}</b>${d}</div>`).join('')}</div>`;
 }
-const cab = (eu) => `<div class="topo"><div class="marca">Documentos de Civil</div>
+
+// Fundo vivo: uma malha de pontos de obra que se ligam entre si e seguem o rato
+let parar = null;
+function fundo(raiz) {
+  if (parar) parar();
+  const c = raiz.querySelector('#fundo'); if (!c) return;
+  const reduzido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const x = c.getContext('2d'); let w, h, pts, rato = { x: -999, y: -999 }, ativo = true, raf;
+  const medir = () => { const r = devicePixelRatio || 1; w = c.width = innerWidth * r; h = c.height = innerHeight * r; c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px';
+    const n = Math.min(90, Math.round(innerWidth * innerHeight / 17000)); pts = Array.from({ length: n }, () => ({ x: Math.random() * w, y: Math.random() * h, vx: (Math.random() - .5) * .35 * r, vy: (Math.random() - .5) * .35 * r, a: Math.random() < .14 })); };
+  const desenhar = () => {
+    const r = devicePixelRatio || 1, D = 150 * r; x.clearRect(0, 0, w, h);
+    for (const p of pts) { if (!reduzido) { p.x += p.vx; p.y += p.vy; } if (p.x < 0 || p.x > w) p.vx *= -1; if (p.y < 0 || p.y > h) p.vy *= -1; }
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i];
+      for (let j = i + 1; j < pts.length; j++) { const q = pts[j], d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < D) { x.strokeStyle = `rgba(${p.a || q.a ? '245,162,10' : '140,175,235'},${(1 - d / D) * .38})`; x.lineWidth = r; x.beginPath(); x.moveTo(p.x, p.y); x.lineTo(q.x, q.y); x.stroke(); } }
+      const dr = Math.hypot(p.x - rato.x * r, p.y - rato.y * r);
+      if (dr < 200 * r) { x.strokeStyle = `rgba(255,190,70,${(1 - dr / (200 * r)) * .7})`; x.lineWidth = r * 1.2; x.beginPath(); x.moveTo(p.x, p.y); x.lineTo(rato.x * r, rato.y * r); x.stroke(); }
+      x.fillStyle = p.a ? '#F5A20A' : 'rgba(170,200,245,.85)'; x.beginPath(); x.arc(p.x, p.y, (p.a ? 3.2 : 2) * r, 0, 7); x.fill();
+    }
+    if (ativo && !reduzido) raf = requestAnimationFrame(desenhar);
+  };
+  const mover = e => { rato = { x: e.clientX, y: e.clientY }; if (reduzido) desenhar(); };
+  medir(); desenhar(); addEventListener('resize', medir); addEventListener('pointermove', mover);
+  parar = () => { ativo = false; cancelAnimationFrame(raf); removeEventListener('resize', medir); removeEventListener('pointermove', mover); parar = null; };
+  const ver = new MutationObserver(() => { if (!document.body.contains(c)) { ver.disconnect(); if (parar) parar(); } }); ver.observe(document.body, { childList: true, subtree: true });
+}
+const palco = (conteudo) => `<div class="palco"><div class="aurora"><i></i><i></i><i></i></div><canvas id="fundo" aria-hidden="true"></canvas><div class="onboarding">${conteudo}</div></div>`;
+const cab = (eu) => `<div class="topo"><div class="marca"><span class="selo">D</span>Documentos de Civil</div>
   <div class="linha" style="font-size:14px">${esc(eu.utilizador.nome)} <button class="claro" data-acao="sair">Sair</button></div></div>`;
 
 export function vistaOnboarding(raiz, eu, seguinte) {
@@ -58,7 +87,7 @@ export function vistaOnboarding(raiz, eu, seguinte) {
         <div class="linha"><button type="button" class="sec" data-acao="voltar">← Voltar</button><button type="submit">Criar gabinete e seguir para o perfil →</button></div>
       </form></section>`;
   }
-  raiz.innerHTML = `<div class="onboarding">${cab(eu)}${convites}${corpo}</div>`;
+  raiz.innerHTML = palco(`${cab(eu)}<div class="boas"><h1>${rascunho.passo === 1 ? 'Vamos montar o teu gabinete' : 'Organiza as áreas de trabalho'}</h1><p>${rascunho.passo === 1 ? 'Três passos e já tens o primeiro rascunho a caminho.' : 'Cada departamento tem o seu arquivo. A geração só usa projetos do mesmo departamento.'}</p></div>${convites}${corpo}`); fundo(raiz); window.scrollTo(0, 0);
 
   // Lê o formulário de departamentos para o rascunho (para não perder o que foi escrito)
   const lerDeps = () => {
@@ -89,9 +118,9 @@ export function vistaOnboarding(raiz, eu, seguinte) {
 // Perfil da pessoa no gabinete: obrigatório para quem cria e para quem é convidado
 export function vistaPerfil(raiz, eu, seguinte) {
   const g = eu.gabineteAtivo;
-  raiz.innerHTML = `<div class="onboarding">${cab(eu)}${passos(3)}
+  raiz.innerHTML = palco(`${cab(eu)}<div class="boas"><h1>Falta só o teu perfil</h1><p>É assim que a equipa te reconhece em ${esc(g.nome)}.</p></div>${passos(3)}
     <section class="cartao"><h2>O teu perfil em ${esc(g.nome)}</h2>
-      <p class="nota">A equipa vê estes dados no gabinete e no chat. O teu nome fica registado quando aceitas secções de um documento.</p>
+      <p class="nota">A equipa vê estes dados no gabinete. O teu nome fica registado quando aceitas secções de um documento.</p>
       <form data-form="perfil">
         <label>Nome *<input name="nome" required value="${esc(eu.utilizador.nome)}"></label>
         <div class="grelha2">
@@ -102,7 +131,7 @@ export function vistaPerfil(raiz, eu, seguinte) {
         <p class="erro-form"></p>
         <button type="submit">Concluir e entrar →</button>
       </form>
-    </section></div>`;
+    </section>`); fundo(raiz);
   ligar(raiz, { sair: async () => { await api('POST', '/api/sair'); seguinte(); } });
   ligarForms(raiz, { perfil: async d => { await api('PUT', '/api/perfil', d); location.hash = '#/app/obras'; seguinte(); } });
 }

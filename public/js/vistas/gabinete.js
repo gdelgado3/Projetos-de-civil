@@ -98,7 +98,7 @@ export async function vistaGabinete(el, ctx) {
     </form>
     ${admin ? `<form data-form="apagarGabinete">
       <h3>O gabinete</h3>
-      <p class="nota">Apaga o gabinete com o arquivo, as obras, os rascunhos e o chat, para toda a equipa. Escreve o nome do gabinete para confirmar.</p>
+      <p class="nota">Apaga o gabinete com o arquivo, as obras, os rascunhos, para toda a equipa. Escreve o nome do gabinete para confirmar.</p>
       <div class="linha"><input name="nome" required placeholder="${esc(g.nome)}" autocomplete="off" style="max-width:320px;margin:0">
       <button type="submit" class="perigo">Apagar o gabinete</button></div>
       <p class="erro-form"></p>

@@ -19,7 +19,7 @@ export async function vistaArquivo(el, ctx, projetoId) {
     <table><tr><th>Projeto</th><th>Departamento</th><th>Ano</th><th>Documentos</th><th></th></tr>
     ${lista.map(x => `<tr><td><b>${esc(x.nome)}</b></td><td>${esc(nomeDep(x.departamentoId))}</td><td>${esc(x.ano)}</td>
       <td>${Object.entries(TIPOS).map(([t, n]) => `<span class="etq ${x.seccoes[t] ? '' : 'vazio'}">${n}${x.seccoes[t] ? ' · ' + x.seccoes[t] + ' secções' : ''}</span>`).join('')}</td>
-      <td class="linha"><a class="botao sec" href="#/app/arquivo/${x.id}">Abrir</a><button class="sec" data-acao="partilhar" data-id="${x.id}">Partilhar no chat</button></td></tr>`).join('')
+      <td class="linha"><a class="botao sec" href="#/app/arquivo/${x.id}">Abrir</a></td></tr>`).join('')
       || '<tr><td colspan="5">Ainda não há projetos no arquivo.</td></tr>'}
     </table>
     <p><a class="botao" href="#/app/arquivo/novo">+ Projeto anterior</a></p>
@@ -61,7 +61,6 @@ export async function vistaArquivo(el, ctx, projetoId) {
   });
   ligar(el, {
     remover: async () => { if (confirmar('proj' + projetoId, 'Remover este projeto do arquivo?')) { await api('DELETE', `/api/projetos/${projetoId}`); location.hash = '#/app/arquivo'; } },
-    partilhar: async x => { await api('POST', '/api/chat', { texto: '', anexo: { tipo: 'projeto', id: x.id } }); mostrar('Partilhado no chat da equipa.'); }
   });
   // Contagem de secções ao escrever e leitura de .docx no servidor
   el.oninput = e => { const t = e.target.dataset.tipo; if (t) el.querySelector(`[data-contagem="${t}"]`).textContent = textoParaSeccoes(e.target.value).length; };

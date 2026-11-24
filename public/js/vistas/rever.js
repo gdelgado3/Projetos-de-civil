@@ -6,7 +6,6 @@ import { TIPOS, NOMES_MARCA, segmentar, nomeObra, seccaoDe } from '/js/motor.js'
 let sel = null;      // parágrafo selecionado {s, p}
 let editar = null;   // índice da secção em edição
 let contexto = '';   // obra:tipo, para limpar a seleção ao mudar
-let comentario = ''; // comentário por enviar (não se perde quando o ecrã é redesenhado)
 let acabadoDeAceitar = null; // para animar só o carimbo novo
 
 const NOMES_TIPO = { reaproveitado: p => `repete-se em ${1 + p.aparece.length} obras`, especifico: () => 'específico', unico: () => 'fonte única', editado: () => 'editado', referencia: () => 'da referência' };
@@ -79,10 +78,6 @@ function desenhar(el, d, tipo) {
     </div>
     ${a.antigos.length ? `<p class="nota"><b>Dados antigos encontrados:</b> ${a.antigos.map(x => `«${esc(x.valor)}» em ${esc(x.seccao)}`).join('; ')}</p>` : ''}
     <p class="legenda"><span><span class="m-dado">Dado da ficha</span></span><span><span class="m-conf">Falta confirmar</span></span><span><span class="m-num">Valor que muda entre obras</span></span><span><span class="m-antigo">Dado de outra obra</span></span></p>
-    <div class="linha">
-      <input id="comentario" value="${esc(comentario)}" placeholder="Comentário para a equipa (opcional)" style="max-width:320px;margin:0">
-      <button class="sec" data-acao="partilhar">${icone('partilhar', 18)}Partilhar no chat</button>
-    </div>
   </section>
   <div class="revisao">
     <article class="documento"><div class="cab-doc"><h2 style="margin:0">${esc(nomeObra(o))}</h2><span class="nota">${TIPOS[tipo]}, ${esc(o.ficha['Fase do projeto'] || '')}</span></div>${seccoes}</article>
@@ -91,7 +86,6 @@ function desenhar(el, d, tipo) {
   acabadoDeAceitar = null;
   animar(el, true);
 
-  el.querySelector('#comentario').oninput = e => { comentario = e.target.value; };
   // Ações de revisão: o servidor aplica e devolve a obra atualizada
   const acao = async (si, nome, corpo) => { desenhar(el, await api('POST', `/api/obras/${o.id}/rascunhos/${tipo}/seccoes/${si}/${nome}`, corpo || {}), tipo); };
   ligar(el, {
@@ -108,11 +102,6 @@ function desenhar(el, d, tipo) {
     usarReferencia: async () => { await acao(sel.s, 'usar-referencia', { paragrafo: sel.p }); mostrar('Texto da referência copiado. Confirma os valores marcados.'); },
     word: () => descarregar(`/api/obras/${o.id}/rascunhos/${tipo}/docx`),
     copiar: () => copiar(r.seccoes.filter(s => s.estado !== 'rejeitada').map(s => s.titulo + '\n\n' + s.paragrafos.map(p => p.texto).join('\n\n')).join('\n\n')),
-    partilhar: async () => {
-      const texto = el.querySelector('#comentario').value;
-      await api('POST', '/api/chat', { texto, anexo: { tipo: 'rascunho', obraId: o.id, docTipo: tipo } });
-      el.querySelector('#comentario').value = ''; comentario = ''; mostrar('Partilhado no chat da equipa.');
-    }
   });
 }
 

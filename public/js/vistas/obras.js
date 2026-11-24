@@ -131,7 +131,6 @@ function desenhar(el, ctx, d, gab, gerado) {
         <div class="grelha3">${gab.gabinete.campos.map(c => `<label>${esc(c)}<input name="ficha:${esc(c)}" value="${esc(o.ficha[c] || '')}"></label>`).join('')}</div>
         <p class="erro-form"></p>
         <div class="ficha-fim"><button type="submit" data-espera>${icone('check', 18)}Guardar ficha</button>
-          <button type="button" class="sec" data-acao="partilhar">${icone('partilhar', 18)}Partilhar no chat</button>
           <button type="button" class="perigo" data-acao="remover">Remover obra</button></div>
       </form>
     </div>
@@ -167,7 +166,6 @@ function desenhar(el, ctx, d, gab, gerado) {
       mostrar(`${TIPOS[x.tipo]} gerada: ${novo.documentos[x.tipo].reaproveitado}% do texto reaproveitado.`);
       passoPorObra[o.id] = 1; desenhar(el, ctx, novo, gab, x.tipo);
     },
-    partilhar: async () => { await api('POST', '/api/chat', { texto: '', anexo: { tipo: 'obra', id: o.id } }); mostrar('Partilhado no chat da equipa.'); },
     remover: async () => { if (confirmar('obra' + o.id, 'Remover esta obra e os seus rascunhos?')) { await api('DELETE', `/api/obras/${o.id}`); location.hash = '#/app/obras'; } }
   });
 }
