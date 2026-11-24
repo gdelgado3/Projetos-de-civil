@@ -52,6 +52,6 @@ export async function vistaChat(el, ctx) {
     receberMensagem(m);
   };
   ligar(el, { enviar });
-  texto.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar().catch(err => mostrar(err.message)); } };
+  texto.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar().catch(err => mostrar(err.message, 'erro')); } };
   texto.focus();
 }

@@ -1,6 +1,6 @@
 // Rever e exportar: secção a secção, com a origem de cada parágrafo ao lado
 import { api, descarregar } from '../api.js';
-import { esc, ligar, mostrar, copiar, carimbo } from '../util.js';
+import { esc, ligar, mostrar, copiar, carimbo, icone, regua, animar } from '../util.js';
 import { TIPOS, NOMES_MARCA, segmentar, nomeObra, seccaoDe } from '/js/motor.js';
 
 let sel = null;      // parágrafo selecionado {s, p}
@@ -30,11 +30,12 @@ export async function vistaRever(el, ctx, obraId, tipo) {
 
 function desenhar(el, d, tipo) {
   const o = d.obra; const doc = d.documentos[tipo]; const r = doc.rascunho;
-  const seletor = `<div class="linha">${Object.entries(TIPOS).map(([t, n]) => `<a class="botao ${t === tipo ? '' : 'sec'}" href="#/app/obras/${o.id}/rever/${t}">${n}${d.documentos[t].rascunho ? '' : ' (por gerar)'}</a>`).join('')}</div>`;
-  const voltar = `<p class="nota" style="margin-top:0"><a href="#/app/obras/${o.id}">Voltar à obra</a></p>`;
+  const idx = Object.keys(TIPOS).indexOf(tipo);
+  const seletor = `<nav class="seg" style="--i:${idx}" aria-label="Tipo de documento">${Object.entries(TIPOS).map(([t, n]) => `<a class="${t === tipo ? 'ativo' : ''}" href="#/app/obras/${o.id}/rever/${t}">${icone(t, 18)}<span>${n.split(' ')[0]}${d.documentos[t].rascunho ? '' : ' <small>por gerar</small>'}</span></a>`).join('')}</nav>`;
+  const voltar = `<a class="voltar" href="#/app/obras/${o.id}">${icone('voltar', 18)}Voltar à obra</a>`;
   if (!r) {
-    el.innerHTML = `<section class="cartao">${voltar}<h2>Rever e exportar</h2>${seletor}<p>Este documento ainda não foi gerado.</p>
-      <button data-acao="gerar" ${doc.nProjetos ? '' : 'disabled'}>Gerar agora</button></section>`;
+    el.innerHTML = `${voltar}<section class="cartao"><h2>Rever e exportar</h2>${seletor}<div class="vazio-estado">${icone(tipo, 40)}<p>Este documento ainda não foi gerado.</p>
+      <button data-acao="gerar" data-espera ${doc.nProjetos ? '' : 'disabled'}>${icone('gerar', 18)}Gerar agora</button></div></section>`;
     ligar(el, { gerar: async () => { desenhar(el, await api('POST', `/api/obras/${o.id}/gerar/${tipo}`), tipo); } });
     return;
   }
@@ -65,8 +66,10 @@ function desenhar(el, d, tipo) {
   ${voltar}
   ${carimbo(TIPOS[tipo], 'Nada sai como final sem o engenheiro aceitar cada secção. Clica num parágrafo para ver de onde veio.',
     [['Obra', esc(nomeObra(o))], ['Estado', aceites === ativas ? 'Revisto' : 'Rascunho'], ['Gerado', `${esc(r.geradoEm)}${r.geradoPor ? ', ' + esc(r.geradoPor) : ''}`], ['Secções verificadas', `${aceites} de ${ativas}`]])}
+  ${seletor}
+  <div class="barra-rever"><div class="prog"><b>${aceites} de ${ativas} secções verificadas</b><span>${a.pend} por rever</span>${regua(ativas ? aceites / ativas * 100 : 0, 'verificado')}</div>
+    <div class="linha"><button data-acao="word" data-espera>${icone('descarregar', 18)}Exportar Word</button><button class="sec" data-acao="copiar">${icone('copiar', 18)}Copiar</button></div></div>
   <section class="cartao">
-    ${seletor}
     ${doc.desatualizado ? `<p class="nota"><span class="etq pendente">A ficha da obra mudou depois de este rascunho ser gerado.</span> Gera de novo para manter os documentos coerentes.</p>` : ''}
     <div class="alertas">
       <div class="alerta ${a.antigos.length ? 'mau' : ''}"><b>${a.antigos.length}</b>dados de obras antigas no texto</div>
@@ -77,10 +80,8 @@ function desenhar(el, d, tipo) {
     ${a.antigos.length ? `<p class="nota"><b>Dados antigos encontrados:</b> ${a.antigos.map(x => `«${esc(x.valor)}» em ${esc(x.seccao)}`).join('; ')}</p>` : ''}
     <p class="legenda"><span><span class="m-dado">Dado da ficha</span></span><span><span class="m-conf">Falta confirmar</span></span><span><span class="m-num">Valor que muda entre obras</span></span><span><span class="m-antigo">Dado de outra obra</span></span></p>
     <div class="linha">
-      <button data-acao="word">Exportar Word (.docx)</button>
-      <button class="sec" data-acao="copiar">Copiar texto</button>
       <input id="comentario" value="${esc(comentario)}" placeholder="Comentário para a equipa (opcional)" style="max-width:320px;margin:0">
-      <button class="sec" data-acao="partilhar">Partilhar no chat</button>
+      <button class="sec" data-acao="partilhar">${icone('partilhar', 18)}Partilhar no chat</button>
     </div>
   </section>
   <div class="revisao">
@@ -88,6 +89,7 @@ function desenhar(el, d, tipo) {
     <aside class="cartao painel">${painel(r)}</aside>
   </div>`;
   acabadoDeAceitar = null;
+  animar(el, true);
 
   el.querySelector('#comentario').oninput = e => { comentario = e.target.value; };
   // Ações de revisão: o servidor aplica e devolve a obra atualizada

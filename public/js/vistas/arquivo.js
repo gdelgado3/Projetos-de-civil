@@ -72,7 +72,7 @@ export async function vistaArquivo(el, ctx, projetoId) {
       const area = el.querySelector(`textarea[data-tipo="${t}"]`); area.value = r.texto;
       el.querySelector(`[data-contagem="${t}"]`).textContent = r.seccoes;
       mostrar(`${f.name}: ${r.seccoes} secções lidas. Confirma os títulos e guarda.`);
-    } catch (err) { mostrar(err.message); }
+    } catch (err) { mostrar(err.message, 'erro'); }
     e.target.value = '';
   };
 }
