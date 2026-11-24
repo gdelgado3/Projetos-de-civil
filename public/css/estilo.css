@@ -486,3 +486,18 @@ button.etapa:not(.ativa):hover { background: rgba(11,31,63,.04) }
 .ficha-det { border: 1px solid var(--linha); border-radius: 14px; padding: 12px 16px; background: #F7FAFE }
 @media (max-width: 1100px) { .grelha4 { grid-template-columns: 1fr 1fr } }
 @media (max-width: 640px) { .grelha4 { grid-template-columns: 1fr } }
+
+/* ===== Exportar PDF ===== */
+.pdf-pop { display: none; position: absolute; right: 16px; top: calc(100% + 10px); width: 380px; max-width: calc(100vw - 32px); background: #fff; border: 1px solid #CBD8EC; border-radius: 18px; padding: 18px 20px 20px; box-shadow: 0 40px 70px -26px rgba(11,31,63,.6); z-index: 30; border-top: 5px solid var(--ambar) }
+.pdf-pop.aberto { display: block; animation: entrar .25s var(--suave) both }
+.pdf-pop h3 { margin: 0 0 2px }
+.pdf-pop .opcoes { display: grid; gap: 8px; margin: 10px 0 }
+.pdf-pop .opcoes label { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 10px 12px; border: 1.5px solid var(--linha); border-radius: 12px; cursor: pointer; transition: border-color .2s, background .2s }
+.pdf-pop .opcoes label:has(input:checked) { border-color: var(--ambar); background: var(--ambar-claro) }
+.pdf-pop .opcoes input { width: auto; margin: 3px 0 0; accent-color: var(--ambar) }
+.pdf-pop .opcoes b { display: block; font-size: 14px } .pdf-pop .opcoes small { display: block; font-weight: 500; color: var(--tinta-2); font-size: 12.5px }
+.pdf-cor { display: none; align-items: center; gap: 12px; margin: 0 0 12px }
+.pdf-cor.ver { display: flex }
+.pdf-cor input { width: 56px; height: 36px; padding: 2px; margin: 0; cursor: pointer }
+.pdf-pop > button { width: 100% }
+.pdf-pop input[type=radio] { padding: 0; background: none; border: 0; box-shadow: none; width: 18px; height: 18px; flex: none }

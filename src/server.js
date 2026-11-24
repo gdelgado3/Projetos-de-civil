@@ -7,6 +7,7 @@ import { um, todos, correr, agora, novoId, transacao } from './db.js';
 import { hashSenha, verificarSenha, criarSessao, sessaoDe, terminarSessao } from './auth.js';
 import * as motor from './motor.js';
 import { construirDocx, lerDocx } from './docx.js';
+import { construirPdf } from './pdf.js';
 import { dadosExemplo } from './exemplo.js';
 
 const raiz = path.dirname(fileURLToPath(import.meta.url));
@@ -557,6 +558,21 @@ app.get('/api/obras/:id/rascunhos/:tipo/docx', ...app_, (req, res) => {
   const buf = construirDocx({ gabinete: gabinete(req.gid), departamento: um('SELECT nome FROM departamentos WHERE id = ?', o.departamentoId), obra: o, rascunho: r, tipo, marcas: marcasObra(arquivo(req.gid), o) });
   const nome = `${motor.slug(motor.TIPOS[tipo])}_${motor.slug(motor.nomeObra(o))}.docx`;
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${nome}"`);
+  res.send(buf);
+});
+
+app.get('/api/obras/:id/pdf', ...app_, (req, res) => {
+  const o = obraDe(req.gid, req.params.id);
+  const pedidos = String(req.query.tipos || Object.keys(motor.TIPOS).join(',')).split(',').map(validarTipo);
+  const documentos = pedidos.map(tipo => ({ tipo, rascunho: rascunhoDe(o.id, tipo) })).filter(x => x.rascunho);
+  if (!documentos.length) throw new Erro('Gera pelo menos um documento antes de exportar o PDF.');
+  const g = gabinete(req.gid); const dep = um('SELECT nome FROM departamentos WHERE id = ?', o.departamentoId);
+  const marcas = marcasObra(arquivo(req.gid), o);
+  const tema = req.query.tema === 'empresa' ? 'empresa' : 'civil';
+  const buf = construirPdf({ gabinete: g, tema, cor: req.query.cor, documentos: documentos.map(x => ({ ...x, obra: o, departamento: dep, marcas })) });
+  const nome = `${documentos.length === 1 ? motor.slug(motor.TIPOS[documentos[0].tipo]) : 'documentos'}_${motor.slug(motor.nomeObra(o))}.pdf`;
+  res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${nome}"`);
   res.send(buf);
 });

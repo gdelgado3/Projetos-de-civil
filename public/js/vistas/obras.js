@@ -1,5 +1,5 @@
 // Obras: lista, ficha única da obra e geração dos três documentos
-import { api } from '../api.js';
+import { api, descarregar } from '../api.js';
 import { esc, ligar, ligarForms, mostrar, confirmar, carimbo, icone, anel, regua, animar } from '../util.js';
 import { TIPOS, nomeObra } from '/js/motor.js';
 
@@ -148,7 +148,7 @@ function desenhar(el, ctx, d, gab, gerado) {
   </section>
   <section class="passo-obra ${passo === 2 ? 'ativo' : ''}">
     <div class="cartao"><h2>Rever e exportar</h2><p class="nota">Nada sai como final sem o engenheiro aceitar cada secção.</p>
-      <div class="rever-lista">${revLinhas || '<div class="vazio-estado"><p>Ainda não há rascunhos. Gera um documento no passo anterior.</p><button data-acao="passo" data-i="1">Ir gerar</button></div>'}</div></div>
+      ${revLinhas ? `<div class="linha" style="margin-bottom:12px"><button class="sec" data-acao="pdfTodos" data-espera>${icone('descarregar', 18)}PDF com os documentos gerados</button></div>` : ''}<div class="rever-lista">${revLinhas || '<div class="vazio-estado"><p>Ainda não há rascunhos. Gera um documento no passo anterior.</p><button data-acao="passo" data-i="1">Ir gerar</button></div>'}</div></div>
   </section>`;
   animar(el);
 
@@ -160,6 +160,7 @@ function desenhar(el, ctx, d, gab, gerado) {
     }
   });
   ligar(el, {
+    pdfTodos: async () => { await descarregar(`/api/obras/${o.id}/pdf`); mostrar('PDF descarregado.'); },
     passo: x => { passoPorObra[o.id] = +x.i; desenhar(el, ctx, d, gab); },
     gerar: async x => {
       const novo = await api('POST', `/api/obras/${o.id}/gerar/${x.tipo}`);

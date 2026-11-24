@@ -6,6 +6,7 @@ import { TIPOS, NOMES_MARCA, segmentar, nomeObra, seccaoDe } from '/js/motor.js'
 let sel = null;      // parágrafo selecionado {s, p}
 let editar = null;   // índice da secção em edição
 let contexto = '';   // obra:tipo, para limpar a seleção ao mudar
+const pdfOp = { escopo: 'este', tema: 'civil', cor: '#1F5FBF' }; // escolhas do PDF (não se perdem ao redesenhar)
 let acabadoDeAceitar = null; // para animar só o carimbo novo
 
 const NOMES_TIPO = { reaproveitado: p => `repete-se em ${1 + p.aparece.length} obras`, especifico: () => 'específico', unico: () => 'fonte única', editado: () => 'editado', referencia: () => 'da referência' };
@@ -67,7 +68,15 @@ function desenhar(el, d, tipo) {
     [['Obra', esc(nomeObra(o))], ['Estado', aceites === ativas ? 'Revisto' : 'Rascunho'], ['Gerado', `${esc(r.geradoEm)}${r.geradoPor ? ', ' + esc(r.geradoPor) : ''}`], ['Secções verificadas', `${aceites} de ${ativas}`]])}
   ${seletor}
   <div class="barra-rever"><div class="prog"><b>${aceites} de ${ativas} secções verificadas</b><span>${a.pend} por rever</span>${regua(ativas ? aceites / ativas * 100 : 0, 'verificado')}</div>
-    <div class="linha"><button data-acao="word" data-espera>${icone('descarregar', 18)}Exportar Word</button><button class="sec" data-acao="copiar">${icone('copiar', 18)}Copiar</button></div></div>
+    <div class="linha"><button data-acao="word" data-espera>${icone('descarregar', 18)}Word</button><button data-acao="pdf" class="pdf-btn">${icone('descarregar', 18)}PDF</button><button class="sec" data-acao="copiar">${icone('copiar', 18)}Copiar</button></div>
+    <div class="pdf-pop" id="pdf-pop"><h3>Exportar PDF</h3>
+      <p class="nota" style="margin:0 0 8px">Escolhe o que levar e o aspeto do documento.</p>
+      <div class="opcoes"><label><input type="radio" name="pdf-escopo" value="este" ${pdfOp.escopo === 'este' ? 'checked' : ''}><span><b>Só esta ${TIPOS[tipo].split(' ')[0].toLowerCase()}</b></span></label>
+        <label><input type="radio" name="pdf-escopo" value="todos" ${pdfOp.escopo === 'todos' ? 'checked' : ''}><span><b>Os três documentos</b><small>juntos, os que já foram gerados</small></span></label></div>
+      <div class="opcoes"><label><input type="radio" name="pdf-tema" value="civil" ${pdfOp.tema === 'civil' ? 'checked' : ''}><span><b>Documentos de Civil</b><small>marinho e âmbar</small></span></label>
+        <label><input type="radio" name="pdf-tema" value="empresa" ${pdfOp.tema === 'empresa' ? 'checked' : ''}><span><b>Marca do gabinete</b><small>nome do gabinete e a tua cor</small></span></label></div>
+      <label class="pdf-cor ${pdfOp.tema === 'empresa' ? 'ver' : ''}">Cor do gabinete<input type="color" id="pdf-cor" value="${pdfOp.cor}"></label>
+      <button data-acao="baixarPdf" data-espera>${icone('descarregar', 18)}Descarregar PDF</button></div></div>
   <section class="cartao">
     ${doc.desatualizado ? `<p class="nota"><span class="etq pendente">A ficha da obra mudou depois de este rascunho ser gerado.</span> Gera de novo para manter os documentos coerentes.</p>` : ''}
     <div class="alertas">
@@ -86,6 +95,9 @@ function desenhar(el, d, tipo) {
   acabadoDeAceitar = null;
   animar(el, true);
 
+  el.querySelector('#pdf-pop').onchange = e => {
+    const n = e.target.name; if (n === 'pdf-escopo') pdfOp.escopo = e.target.value; else if (n === 'pdf-tema') { pdfOp.tema = e.target.value; el.querySelector('.pdf-cor').classList.toggle('ver', e.target.value === 'empresa'); } else if (e.target.id === 'pdf-cor') pdfOp.cor = e.target.value;
+  };
   // Ações de revisão: o servidor aplica e devolve a obra atualizada
   const acao = async (si, nome, corpo) => { desenhar(el, await api('POST', `/api/obras/${o.id}/rascunhos/${tipo}/seccoes/${si}/${nome}`, corpo || {}), tipo); };
   ligar(el, {
@@ -100,6 +112,12 @@ function desenhar(el, d, tipo) {
       editar = null; await acao(x.s, 'editar', { textos });
     },
     usarReferencia: async () => { await acao(sel.s, 'usar-referencia', { paragrafo: sel.p }); mostrar('Texto da referência copiado. Confirma os valores marcados.'); },
+    pdf: () => el.querySelector('#pdf-pop').classList.toggle('aberto'),
+    baixarPdf: async () => {
+      const tipos = pdfOp.escopo === 'todos' ? Object.keys(TIPOS).join(',') : tipo;
+      await descarregar(`/api/obras/${o.id}/pdf?tipos=${tipos}&tema=${pdfOp.tema}&cor=${encodeURIComponent(pdfOp.cor)}`);
+      el.querySelector('#pdf-pop').classList.remove('aberto'); mostrar('PDF descarregado.');
+    },
     word: () => descarregar(`/api/obras/${o.id}/rascunhos/${tipo}/docx`),
     copiar: () => copiar(r.seccoes.filter(s => s.estado !== 'rejeitada').map(s => s.titulo + '\n\n' + s.paragrafos.map(p => p.texto).join('\n\n')).join('\n\n')),
   });

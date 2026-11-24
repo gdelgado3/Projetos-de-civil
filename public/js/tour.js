@@ -51,7 +51,7 @@ const PASSOS = [
   { alvo: '.carimbo-v', opcional: true, titulo: 'Verificado por ti',
     texto: 'O carimbo guarda quem validou e quando. A barra de progresso no topo sobe a cada secção aceite.' },
   { alvo: '.barra-rever', titulo: 'Exportar para Word',
-    texto: 'Quando as secções estiverem verificadas, exporta o .docx e continua no Word. O botão está nesta barra, e podes experimentá-lo no fim do guia.' },
+    texto: 'Quando as secções estiverem verificadas, exporta o Word ou o PDF. No PDF escolhes o tema do Documentos de Civil ou a marca e a cor do teu gabinete. Os botões estão nesta barra: experimenta no fim do guia.' },
   { alvo: '.seg a:nth-child(2)', clicar: '.seg a:nth-child(2)', botao: 'Ver os cálculos', titulo: 'O mesmo para os cálculos',
     texto: 'Muda de documento aqui. Clica em «Cálculos».' },
   { alvo: '.documento', titulo: 'Cálculos descritivos',
