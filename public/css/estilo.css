@@ -123,6 +123,9 @@ h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px }
 .caixa { border: 1px solid var(--linha); border-radius: 12px; padding: 14px; margin-top: 12px; background: #fff }
 .linha { display: flex; gap: 8px; flex-wrap: wrap; align-items: center }
 .grelha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px }
+.grelha4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 14px }
+.grelha4 label { margin-bottom: 10px }
+.grelha4 input { padding: 8px 10px; font-size: 14px }
 .grelha3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 16px }
 details { border-top: 1px solid var(--linha); padding: 12px 0; margin: 0 }
 details:last-of-type { border-bottom: 1px solid var(--linha) }
@@ -472,3 +475,14 @@ button.etapa:not(.ativa):hover { background: rgba(11,31,63,.04) }
 .tour-cartao .linha { justify-content: flex-end; margin-top: 4px }
 .tour-cartao .regua { height: 8px }
 @media (max-width: 900px) { .guia-btn { display: none } }
+
+/* Editor do arquivo: um documento de cada vez, caixa que cresce com o texto */
+.seg button { position: relative; z-index: 1; background: transparent; color: var(--marinho); border: 0; box-shadow: none; padding: 10px 22px; border-radius: 12px; font-weight: 700; transition: color .3s }
+.seg button:hover { background: transparent; box-shadow: none; transform: none }
+.seg button.ativo { color: #fff } .seg button.ativo .ico { color: var(--ambar) }
+.seg button small { font-weight: 800; background: rgba(245,162,10,.25); color: inherit; border-radius: 8px; padding: 0 7px; margin-left: 4px }
+.aba-doc { display: none } .aba-doc.ativa { display: block; animation: entrar .3s var(--suave) both }
+.aba-doc textarea { font-family: var(--texto); font-size: 15.5px; line-height: 1.6; min-height: 220px; overflow-y: auto; overscroll-behavior: auto }
+.ficha-det { border: 1px solid var(--linha); border-radius: 14px; padding: 12px 16px; background: #F7FAFE }
+@media (max-width: 1100px) { .grelha4 { grid-template-columns: 1fr 1fr } }
+@media (max-width: 640px) { .grelha4 { grid-template-columns: 1fr } }
