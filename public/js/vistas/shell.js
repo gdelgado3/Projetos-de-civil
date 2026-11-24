@@ -6,6 +6,7 @@ import { vistaArquivo } from './arquivo.js';
 import { vistaObras, vistaObra } from './obras.js';
 import { vistaRever } from './rever.js';
 import { vistaPlataforma } from './plataforma.js';
+import { iniciarGuia, reiniciarGuia, eDemo } from '../tour.js';
 
 let rotaAtual = [];
 let utilizadorId = null;
@@ -63,6 +64,7 @@ export async function montarApp(raiz, eu, rota, recarregar) {
         <nav class="nav" id="nav" aria-label="Menu principal"><span class="nav-ind" id="nav-ind"></span>
           ${separadores.map(([id, nome, curto, ico]) => `<a class="nav-item" data-id="${id}" href="#/app/${id}" title="${nome}">${icone(ico, 21)}<span class="rotulo">${nome}</span><span class="curto">${curto}</span></a>`).join('')}
         </nav>
+        ${eDemo(eu) ? `<button class="guia-btn" data-acao="guia" title="Repetir a visita guiada">${icone('gerar', 20)}<span class="rotulo">Guia da demo</span></button>` : ''}
         <div class="eu"><div class="avatar" aria-hidden="true">${esc(iniciais(eu.utilizador.nome))}</div>
           <div class="eu-txt"><b>${esc(eu.utilizador.nome)}</b>${esc(g.funcao || '')}${g.papel === 'admin' ? ', administrador' : ''}</div>
           <button class="claro" data-acao="sair" title="Sair" aria-label="Sair da conta">${icone('sair', 18)}</button></div>
@@ -71,6 +73,7 @@ export async function montarApp(raiz, eu, rota, recarregar) {
     </div>`;
     const lateral = raiz.querySelector('.lateral');
     ligar(lateral, {
+      guia: () => reiniciarGuia(eu),
       sair: async () => { await api('POST', '/api/sair'); desmontarApp(); location.hash = '#/'; recarregar(); },
       recolher: () => {
         const app = raiz.querySelector('.app'); const v = app.classList.toggle('compacta'); gravarCompacta(v);
@@ -107,4 +110,5 @@ export async function montarApp(raiz, eu, rota, recarregar) {
   if (mudou) { el.classList.remove('entra'); void el.offsetWidth; el.classList.add('entra'); }
   animar(el);
   window.scrollTo({ top: 0, behavior: 'instant' });
+  iniciarGuia(eu);
 }

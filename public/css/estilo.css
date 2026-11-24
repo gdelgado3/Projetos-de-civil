@@ -10,7 +10,7 @@
   --ambar-vivo: #FFB62E;
   --ambar-claro: #FFF1D6;
   --ambar-escuro: #8A5200;
-  --nevoa: #F2F5FA;
+  --nevoa: #E3EAF6;
   --folha: #FFFFFF;
   --tinta: #0F1B2E;
   --tinta-2: #4F5F7A;
@@ -33,7 +33,7 @@
 
 * { box-sizing: border-box }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth }
-body { margin: 0; background: var(--nevoa); color: var(--tinta); font-family: var(--ui); font-size: 15px; line-height: 1.55 }
+body { margin: 0; background: #DDE6F4; color: var(--tinta); font-family: var(--ui); font-size: 15px; line-height: 1.55 }
 a { color: var(--azul) }
 h1, h2, h3 { font-family: var(--ui); line-height: 1.12; margin: 0; letter-spacing: -.02em }
 h1 { font-size: 36px; font-weight: 800 }
@@ -53,7 +53,10 @@ h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px }
 @keyframes entrar { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
 
 /* ===== Moldura: barra lateral marinho + área de trabalho ===== */
-.app { display: grid; grid-template-columns: auto 1fr; min-height: 100vh }
+.app { display: grid; grid-template-columns: auto 1fr; min-height: 100vh;
+  background: radial-gradient(900px 520px at 92% -6%, rgba(245,162,10,.20), transparent 62%), radial-gradient(900px 640px at 8% 0%, rgba(31,95,191,.22), transparent 62%),
+    linear-gradient(rgba(11,31,63,.045) 1px, transparent 1px) 0 0 / 34px 34px, linear-gradient(90deg, rgba(11,31,63,.045) 1px, transparent 1px) 0 0 / 34px 34px, #D8E3F3;
+  background-attachment: fixed }
 .lateral { width: 276px; transition: width .35s var(--suave); background: radial-gradient(120% 60% at 0% 0%, #17376F 0%, transparent 60%), linear-gradient(180deg, var(--marinho) 0%, var(--fundo-escuro) 100%); color: #C3D1EB; padding: 20px 14px 16px; display: flex; flex-direction: column; gap: 18px; position: sticky; top: 0; height: 100vh; overflow: hidden; white-space: nowrap }
 .app.compacta .lateral { width: 86px }
 .lateral .topo-lat { display: flex; align-items: center; gap: 12px; padding: 0 4px }
@@ -112,7 +115,7 @@ h3 { font-size: 17px; font-weight: 700; margin-bottom: 4px }
 .voltar:hover .ico { transform: translateX(-3px) }
 
 /* ===== Blocos de conteúdo ===== */
-.cartao { background: var(--folha); border: 1px solid var(--linha); border-radius: 18px; padding: 22px 26px; margin: 0 0 18px; box-shadow: var(--sombra) }
+.cartao { background: var(--folha); border: 1px solid #CBD8EC; border-radius: 18px; padding: 22px 26px; margin: 0 0 18px; box-shadow: var(--sombra) }
 .cartao > h2:first-child, .cartao > h3:first-child { margin-top: 0 }
 .cab-sec { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px }
 .cab-sec h2 { margin: 0 }
@@ -130,9 +133,9 @@ summary::-webkit-details-marker { display: none }
 
 /* ===== Formulários e botões ===== */
 label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--tinta) }
-input, select, textarea { font-family: var(--ui); font-size: 15px; border: 1px solid #C6D3E8; border-radius: 10px; padding: 10px 12px; width: 100%; color: var(--tinta); background: #fff; margin-top: 5px; transition: border-color .2s, box-shadow .2s }
+input, select, textarea { font-family: var(--ui); font-size: 15px; border: 1px solid #B9C9E3; border-radius: 10px; padding: 10px 12px; width: 100%; color: var(--tinta); background: #F1F5FC; margin-top: 5px; transition: border-color .2s, box-shadow .2s }
 input:hover, select:hover, textarea:hover { border-color: #9DB0D0 }
-input:focus, select:focus, textarea:focus { border-color: var(--azul); outline: none; box-shadow: 0 0 0 4px rgba(31,95,191,.16) }
+input:focus, select:focus, textarea:focus { background: #fff; border-color: var(--azul); outline: none; box-shadow: 0 0 0 4px rgba(31,95,191,.16) }
 input:not(:placeholder-shown):not([readonly]):valid { border-color: #BFD0E8 }
 textarea { resize: vertical; line-height: 1.5 }
 input[readonly] { background: var(--nevoa) }
@@ -444,3 +447,28 @@ button.etapa:not(.ativa):hover { background: rgba(11,31,63,.04) }
   .carimbo-v { position: static; display: inline-block; margin-bottom: 8px }
   h1 { font-size: 28px }
 }
+
+/* ===== Botão do guia e visita guiada ===== */
+.guia-btn { width: 100%; justify-content: flex-start; gap: 13px; padding: 12px 15px; border-radius: 13px; background: linear-gradient(135deg, rgba(245,162,10,.22), rgba(245,162,10,.08)); color: #FFE2A6; border: 1px solid rgba(245,162,10,.5); box-shadow: none; animation: respira 2.8s ease-in-out infinite }
+.guia-btn:hover { background: rgba(245,162,10,.3); color: #fff; box-shadow: none }
+@keyframes respira { 50% { box-shadow: 0 0 0 6px rgba(245,162,10,.1) } }
+.app.compacta .guia-btn { justify-content: center; padding: 12px 0 }
+.tour { position: fixed; inset: 0; z-index: 80; pointer-events: none }
+.tour-vel { position: fixed; inset: 0; background: rgba(5,14,30,.78); backdrop-filter: blur(3px); pointer-events: auto }
+.tb { position: fixed; pointer-events: auto; display: none }
+.tour-foco { position: fixed; display: none; border-radius: 16px; pointer-events: none; box-shadow: 0 0 0 9999px rgba(5,14,30,.74), 0 0 0 3px var(--ambar), 0 0 0 10px rgba(245,162,10,.28); animation: foco 2.2s ease-in-out infinite; transition: left .45s var(--suave), top .45s var(--suave), width .45s var(--suave), height .45s var(--suave) }
+@keyframes foco { 50% { box-shadow: 0 0 0 9999px rgba(5,14,30,.74), 0 0 0 3px var(--ambar), 0 0 0 18px rgba(245,162,10,.08) } }
+.tour-cartao { position: fixed; z-index: 2; pointer-events: auto; background: #fff; border-radius: 22px; padding: 18px 20px 20px; box-shadow: 0 40px 80px -24px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.4); transition: left .45s var(--suave), top .45s var(--suave); border-top: 5px solid var(--ambar) }
+.tour-cartao.entra { animation: tcarta .4s var(--mola) both }
+@keyframes tcarta { from { opacity: 0; transform: translateY(12px) scale(.96) } to { opacity: 1; transform: none } }
+.tour-cartao.espera { opacity: .0; pointer-events: none }
+.tour-cartao h3 { font-size: 21px; margin: 12px 0 6px }
+.tour-cartao p { margin: 0 0 10px; color: var(--tinta-2); font-size: 14.5px }
+.tour-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
+.tour-sel { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: var(--ambar-escuro) }
+.tour-x { background: transparent; border: 0; box-shadow: none; padding: 4px 8px; color: var(--tinta-2); font-size: 13px; font-weight: 600 }
+.tour-x:hover { background: #EEF2FA; color: var(--marinho); box-shadow: none; transform: none }
+.tour-dica { display: flex; align-items: center; gap: 6px; font-size: 13px !important; color: var(--azul) !important; font-weight: 600 }
+.tour-cartao .linha { justify-content: flex-end; margin-top: 4px }
+.tour-cartao .regua { height: 8px }
+@media (max-width: 900px) { .guia-btn { display: none } }
