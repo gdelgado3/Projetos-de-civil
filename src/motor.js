@@ -3,7 +3,7 @@
 // Não usa IA: monta o rascunho com o texto que se repete nos projetos anteriores do gabinete.
 
 // ===== Constantes =====
-export const TIPOS = { memoria: 'Memória descritiva', calculos: 'Cálculos descritivos', proposta: 'Proposta para concurso' };
+export const TIPOS = { memoria: 'Memória descritiva', calculos: 'Cálculos descritivos' };
 export const AREAS = ['Hidráulica', 'Geotecnia', 'Estruturas'];
 export const PLANOS = { pequeno: { nome: 'Pequeno', max: 3, preco: '100 €/mês' }, medio: { nome: 'Médio', max: 10, preco: '250 €/mês' } };
 export const CAMPOS_BASE = ['Designação da obra', 'Dono de obra', 'Concelho', 'Local', 'Tipo de obra', 'Fase do projeto', 'Ano', 'Capacidade', 'Cota de soleira', 'Material', 'Coordenador do projeto'];

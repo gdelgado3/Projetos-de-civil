@@ -1,6 +1,6 @@
 # Documentos de Civil — MVP
 
-Gera o primeiro rascunho das **memórias descritivas**, dos **cálculos descritivos** e das **propostas para concurso** de um gabinete de engenharia civil, a partir dos seus projetos anteriores. O engenheiro revê, valida e assina.
+Gera o primeiro rascunho das **memórias descritivas** e dos **cálculos descritivos** de um gabinete de engenharia civil, a partir dos seus projetos anteriores. O engenheiro revê, valida e assina.
 
 Projeto de inovação da JUNITEC.
 

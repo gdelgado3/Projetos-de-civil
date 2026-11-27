@@ -1,13 +1,12 @@
-// Obras: lista, ficha única da obra e geração dos três documentos
+// Obras: lista, ficha única da obra e geração dos documentos
 import { api, descarregar } from '../api.js';
 import { esc, ligar, ligarForms, mostrar, confirmar, carimbo, icone, anel, regua, animar } from '../util.js';
 import { TIPOS, nomeObra } from '/js/motor.js';
 
-const ICONE_TIPO = { memoria: 'memoria', calculos: 'calculos', proposta: 'proposta' };
+const ICONE_TIPO = { memoria: 'memoria', calculos: 'calculos',  };
 const DESC_TIPO = {
   memoria: 'Texto descritivo da solução, montado a partir das memórias das tuas obras anteriores.',
-  calculos: 'Bases e descrição dos cálculos, com os valores que mudam entre obras marcados para confirmar.',
-  proposta: 'Proposta técnica para concurso, com a estrutura e o texto que o gabinete já usa.'
+  calculos: 'Bases e descrição dos cálculos, com os valores que mudam entre obras marcados para confirmar.'
 };
 let filtro = 'todas', pesquisa = '';
 const passoPorObra = {};
@@ -41,7 +40,7 @@ export async function vistaObras(el, ctx) {
   };
   const filtros = [['todas', 'Todas'], ['pendentes', 'Por rever'], ['revistas', 'Revistas'], ['novas', 'Sem documentos']];
   const visiveis = lista.filter(passa);
-  el.innerHTML = `${carimbo('Obras', 'Cada obra tem uma ficha preenchida uma só vez. A memória, os cálculos e a proposta usam todos os mesmos dados.',
+  el.innerHTML = `${carimbo('Obras', 'Cada obra tem uma ficha preenchida uma só vez. A memória e os cálculos usam os mesmos dados.',
     [['Gabinete', esc(gab.gabinete.nome)], ['Data', new Date().toLocaleDateString('pt-PT')]])}
   <div class="numeros">
     <div class="numero"><div class="bolha">${icone('obras', 22)}</div><div><b data-conta="${lista.length}">${lista.length}</b><span>obras no gabinete</span></div></div>
@@ -90,7 +89,7 @@ function desenhar(el, ctx, d, gab, gerado) {
   const tot = docs.reduce((s, x) => s + (x.rascunho ? x.rascunho.seccoes.length : 0), 0);
   const ace = docs.reduce((s, x) => s + (x.rascunho ? x.rascunho.seccoes.filter(q => q.estado === 'aceite').length : 0), 0);
   const etapas = [['Dar contexto', 'A ficha da obra', 'ficha', 100 * (gab.gabinete.campos.filter(c => o.ficha[c]).length / Math.max(1, gab.gabinete.campos.length))],
-    ['Gerar o rascunho', `${nGer} de 3 documentos`, 'gerar', nGer / 3 * 100], ['Rever e exportar', `${ace} de ${tot} secções`, 'ver', tot ? ace / tot * 100 : 0]];
+    ['Gerar o rascunho', `${nGer} de ${docs.length} documentos`, 'gerar', nGer / docs.length * 100], ['Rever e exportar', `${ace} de ${tot} secções`, 'ver', tot ? ace / tot * 100 : 0]];
   const cartoes = Object.entries(TIPOS).map(([t, n]) => {
     const doc = d.documentos[t]; const r = doc.rascunho;
     const total = r ? r.seccoes.length : 0, aceites = r ? r.seccoes.filter(s => s.estado === 'aceite').length : 0;
@@ -136,7 +135,7 @@ function desenhar(el, ctx, d, gab, gerado) {
     </div>
   </section>
   <section class="passo-obra ${passo === 1 ? 'ativo' : ''}">
-    <div class="cab-sec"><div><h2>Escolhe o documento</h2><p class="nota" style="margin:0">Gera os três com os mesmos dados da ficha. Podes gerar de novo sempre que a ficha mudar.</p></div></div>
+    <div class="cab-sec"><div><h2>Escolhe o documento</h2><p class="nota" style="margin:0">Gera os dois com os mesmos dados da ficha. Podes gerar de novo sempre que a ficha mudar.</p></div></div>
     <div class="docs">${cartoes}</div>
     <div class="cartao" style="margin-top:18px"><details open><summary>Como é montado o rascunho</summary><ul class="nota">
       <li>A base é o projeto anterior mais parecido com a obra nova (tipo de obra, material, dono de obra, concelho) e mais recente.</li>

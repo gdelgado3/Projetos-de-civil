@@ -25,16 +25,6 @@ function calculos(f, v) {
     ['5. Verificações', [`As paredes, com ${v.paredes} de espessura, verificam o estado limite de fendilhação com uma abertura máxima de fendas de 0,2 mm.`, `A laje de fundo foi verificada ao punçoamento e à flexão, considerando a soleira à cota ${f['Cota de soleira']}.`]]
   ]);
 }
-function proposta(f, v, nomeGab) {
-  return doc([
-    ['1. Apresentação do concorrente', [`O ${nomeGab} é um gabinete de engenharia com mais de 20 anos de experiência em projetos de abastecimento de água, drenagem e estruturas hidráulicas.`]],
-    ['2. Compreensão do objeto', [`O procedimento tem por objeto a elaboração do ${f['Fase do projeto']} do ${f['Designação da obra']}, promovido por ${f['Dono de obra']}, no concelho de ${f['Concelho']}.`, v.condicionante]],
-    ['3. Metodologia', ['O trabalho organiza-se em três fases: recolha de elementos e levantamentos, desenvolvimento e compatibilização das especialidades, e entrega com revisão interna.', 'Em cada fase é feita uma reunião com o dono de obra para validar as opções tomadas.']],
-    ['4. Equipa técnica', [`A coordenação será assegurada por ${f['Coordenador do projeto']}, com o apoio dos departamentos de Hidráulica e de Estruturas.`]],
-    ['5. Prazo', [`Propõe-se um prazo de execução de ${v.prazo}, contados a partir da data de consignação.`]]
-  ]);
-}
-
 // Devolve { projetos, obra } prontos a inserir
 export function dadosExemplo(nomeGab) {
   const camara = 'Junto às células existe uma câmara de manobras onde se instalam as válvulas de seccionamento, o medidor de caudal e os equipamentos de telegestão.';
@@ -55,7 +45,7 @@ export function dadosExemplo(nomeGab) {
   ];
   const projetos = lista.map(([f, v]) => ({
     nome: f['Designação da obra'], ano: f['Ano'], ficha: f,
-    documentos: { memoria: memoria(f, v), calculos: calculos(f, v), proposta: proposta(f, v, nomeGab) }
+    documentos: { memoria: memoria(f, v), calculos: calculos(f, v) }
   }));
   const obra = { ficha: ficha('Reservatório de Monte Claro (exemplo)', 'Município de Porto Exemplo', 'Porto Exemplo', 'Cerro da Fonte', '2026', '2 500 m³', '175,30 m', 'betão armado C30/37', '') };
   return { projetos, obra };

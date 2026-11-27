@@ -72,7 +72,7 @@ function desenhar(el, d, tipo) {
     <div class="pdf-pop" id="pdf-pop"><h3>Exportar PDF</h3>
       <p class="nota" style="margin:0 0 8px">Escolhe o que levar e o aspeto do documento.</p>
       <div class="opcoes"><label><input type="radio" name="pdf-escopo" value="este" ${pdfOp.escopo === 'este' ? 'checked' : ''}><span><b>Só esta ${TIPOS[tipo].split(' ')[0].toLowerCase()}</b></span></label>
-        <label><input type="radio" name="pdf-escopo" value="todos" ${pdfOp.escopo === 'todos' ? 'checked' : ''}><span><b>Os três documentos</b><small>juntos, os que já foram gerados</small></span></label></div>
+        <label><input type="radio" name="pdf-escopo" value="todos" ${pdfOp.escopo === 'todos' ? 'checked' : ''}><span><b>Os dois documentos</b><small>juntos, os que já foram gerados</small></span></label></div>
       <div class="opcoes"><label><input type="radio" name="pdf-tema" value="civil" ${pdfOp.tema === 'civil' ? 'checked' : ''}><span><b>Documentos de Civil</b><small>marinho e âmbar</small></span></label>
         <label><input type="radio" name="pdf-tema" value="empresa" ${pdfOp.tema === 'empresa' ? 'checked' : ''}><span><b>Marca do gabinete</b><small>nome do gabinete e a tua cor</small></span></label></div>
       <label class="pdf-cor ${pdfOp.tema === 'empresa' ? 'ver' : ''}">Cor do gabinete<input type="color" id="pdf-cor" value="${pdfOp.cor}"></label>

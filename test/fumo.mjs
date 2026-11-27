@@ -66,7 +66,7 @@ try {
   await assert.rejects(rui('POST', `/api/obras/${oid}/rascunhos/memoria/seccoes/0/aceitar`), /A CONFIRMAR/); passo('aceitar bloqueado com [A CONFIRMAR]');
   o = await rui('POST', `/api/obras/${oid}/rascunhos/memoria/seccoes/3/aceitar`);
   assert.equal(o.documentos.memoria.rascunho.seccoes[3].revistoPor, 'Rui Costa'); passo('secção aceite com nome do revisor');
-  await rui('POST', `/api/obras/${oid}/gerar/calculos`); await rui('POST', `/api/obras/${oid}/gerar/proposta`); passo('cálculos e proposta gerados');
+  await rui('POST', `/api/obras/${oid}/gerar/calculos`); passo('cálculos gerados');
 
   const r = await ana('GET', `/api/obras/${oid}/rascunhos/memoria/docx`, undefined, true);
   assert.equal(r.status, 200); const buf = Buffer.from(await r.arrayBuffer());
@@ -102,8 +102,8 @@ try {
   const v1 = async (m, u, b) => { const r = await fetch(base + u, { method: m, headers: { Cookie: c1, ...(b ? { 'Content-Type': 'application/json' } : {}) }, body: b ? JSON.stringify(b) : undefined }); return r.json(); };
   assert.equal((await v1('GET', '/api/eu')).estado, 'pronto');
   const obrasV1 = await v1('GET', '/api/obras'); assert.equal(obrasV1.length, 1);
-  const gV1 = await v1('POST', `/api/obras/${obrasV1[0].id}/gerar/proposta`); assert.ok(gV1.documentos.proposta.rascunho.seccoes.length > 0);
-  passo('código certo: entra já com perfil, obra e projetos de exemplo, e gera a proposta');
+  const gV1 = await v1('POST', `/api/obras/${obrasV1[0].id}/gerar/calculos`); assert.ok(gV1.documentos.calculos.rascunho.seccoes.length > 0);
+  passo('código certo: entra já com perfil, obra e projetos de exemplo, e gera os cálculos');
   assert.equal((await entrarDemo('codigo-demo-teste', c1)).headers.get('set-cookie'), null);
   assert.equal((await ana('GET', '/api/plataforma')).utilizadores.filter(u => u.email.endsWith('@demo.local')).length, 1); passo('voltar a ler o QR não cria outra conta');
   const d2 = await entrarDemo('codigo-demo-teste'); const c2 = d2.headers.get('set-cookie').split(';')[0];
