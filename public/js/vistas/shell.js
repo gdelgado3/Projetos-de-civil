@@ -7,6 +7,7 @@ import { vistaObras, vistaObra } from './obras.js';
 import { vistaRever } from './rever.js';
 import { vistaPlataforma } from './plataforma.js';
 import { iniciarGuia, reiniciarGuia, eDemo } from '../tour.js';
+import { mostrarCarga, esconderCarga } from '../carga.js';
 
 let rotaAtual = [];
 let utilizadorId = null;
@@ -48,7 +49,9 @@ export async function montarApp(raiz, eu, rota, recarregar) {
   rotaAtual = rota;
   // A moldura só é desenhada uma vez (ou quando muda o utilizador ou o gabinete)
   const chave = `${eu.utilizador.id}:${eu.gabineteAtivo.id}`;
-  if (raiz.dataset.shell !== chave) {
+  const novaMoldura = raiz.dataset.shell !== chave;
+  if (novaMoldura) mostrarCarga();
+  if (novaMoldura) {
     raiz.dataset.shell = chave; utilizadorId = eu.utilizador.id;
     const g = eu.gabineteAtivo;
     const separadores = eu.plataformaAdmin ? [...SEPARADORES, ['plataforma', 'Administração', 'Admin', 'plataforma']] : SEPARADORES;
@@ -110,5 +113,6 @@ export async function montarApp(raiz, eu, rota, recarregar) {
   if (mudou) { el.classList.remove('entra'); void el.offsetWidth; el.classList.add('entra'); }
   animar(el);
   window.scrollTo({ top: 0, behavior: 'instant' });
+  if (novaMoldura) await esconderCarga(3200);
   iniciarGuia(eu);
 }
